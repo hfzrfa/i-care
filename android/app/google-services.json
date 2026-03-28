@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "309326584123",
+    "project_id": "gsrapp-c4a20",
+    "storage_bucket": "gsrapp-c4a20.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309326584123:android:3e6615e09379c46e6e7f1e",
+        "android_client_info": {
+          "package_name": "com.example.gsrapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSa4bwTT2J2Yd9DqMfoBYJuqjASVR5ev0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,55 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "email": {
+          ".validate": "newData.isString() && auth.token.email != null && newData.val() === auth.token.email"
+        },
+        "display_name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "created_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "last_login_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "updated_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "health_monitoring": {
+      "latest": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "history": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "devices": {
+        "$deviceId": {
+          "latest": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          },
+          "history": {
+            ".read": "auth != null",
+            ".write": "auth != null"
+          }
+        }
+      }
+    }
+  }
+}
