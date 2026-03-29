@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
 
 import '../viewmodels/dashboard_view_model.dart';
@@ -79,11 +85,17 @@ class ReportsPage extends StatelessWidget {
                   children: [
                     Text('Report Menu', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),
-                    const _MenuRow(icon: Icons.picture_as_pdf_outlined, text: 'Export PDF (Demo)'),
+                    _MenuActionButton(
+                      icon: Icons.picture_as_pdf_outlined,
+                      text: 'Export PDF',
+                      onTap: () => _exportPdf(context, vm),
+                    ),
                     const SizedBox(height: 8),
-                    const _MenuRow(icon: Icons.table_chart_outlined, text: 'Export CSV (Demo)'),
-                    const SizedBox(height: 8),
-                    const _MenuRow(icon: Icons.mail_outline, text: 'Share via Email (Demo)'),
+                    _MenuActionButton(
+                      icon: Icons.table_chart_outlined,
+                      text: 'Export CSV',
+                      onTap: () => _exportCsv(context, vm),
+                    ),
                   ],
                 ),
               ),
@@ -100,6 +112,128 @@ class ReportsPage extends StatelessWidget {
     }
     final total = values.fold<double>(0, (sum, value) => sum + value);
     return total / values.length;
+  }
+
+  Future<void> _exportPdf(BuildContext context, DashboardViewModel vm) async {
+    final pointCount = vm.gsrHistory.length < vm.emgHistory.length
+        ? vm.gsrHistory.length
+        : vm.emgHistory.length;
+
+    if (pointCount == 0) {
+      _showSnackBar(context, 'Belum ada data untuk diekspor.');
+      return;
+    }
+
+    try {
+      final now = DateTime.now();
+      final gsrAvg = _average(vm.gsrHistory);
+      final emgAvg = _average(vm.emgHistory);
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          build: (context) => [
+            pw.Header(level: 0, child: pw.Text('GSR Health Report')),
+            pw.Text('Generated at: ${now.toIso8601String()}'),
+            pw.SizedBox(height: 12),
+            pw.Text('Summary', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.Bullet(text: 'Average GSR: ${gsrAvg.toStringAsFixed(2)} uS'),
+            pw.Bullet(text: 'Average EMG: ${emgAvg.toStringAsFixed(2)} mV'),
+            pw.Bullet(text: 'Data points: $pointCount'),
+            pw.SizedBox(height: 16),
+            pw.Text('Data Table', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            pw.Table.fromTextArray(
+              headers: const ['No', 'GSR (uS)', 'EMG (mV)', 'Combined'],
+              data: List<List<String>>.generate(pointCount, (index) {
+                final gsr = vm.gsrHistory[index];
+                final emg = vm.emgHistory[index];
+                final combined = (gsr + emg) / 2;
+
+                return [
+                  '${index + 1}',
+                  gsr.toStringAsFixed(3),
+                  emg.toStringAsFixed(3),
+                  combined.toStringAsFixed(3),
+                ];
+              }),
+            ),
+          ],
+        ),
+      );
+
+      final reportFile = await _writeReportFile(
+        extension: 'pdf',
+        bytes: await pdf.save(),
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+      _showSnackBar(context, 'PDF berhasil dibuat di: ${reportFile.path}');
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+      _showSnackBar(context, 'Gagal membuat PDF. Coba lagi.');
+    }
+  }
+
+  Future<void> _exportCsv(BuildContext context, DashboardViewModel vm) async {
+    final pointCount = vm.gsrHistory.length < vm.emgHistory.length
+        ? vm.gsrHistory.length
+        : vm.emgHistory.length;
+
+    if (pointCount == 0) {
+      _showSnackBar(context, 'Belum ada data untuk diekspor.');
+      return;
+    }
+
+    try {
+      final buffer = StringBuffer();
+      buffer.writeln('No,GSR_uS,EMG_mV,Combined');
+
+      for (var index = 0; index < pointCount; index++) {
+        final gsr = vm.gsrHistory[index];
+        final emg = vm.emgHistory[index];
+        final combined = (gsr + emg) / 2;
+        buffer.writeln(
+          '${index + 1},${gsr.toStringAsFixed(3)},${emg.toStringAsFixed(3)},${combined.toStringAsFixed(3)}',
+        );
+      }
+
+      final reportFile = await _writeReportFile(
+        extension: 'csv',
+        bytes: utf8.encode(buffer.toString()),
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+      _showSnackBar(context, 'CSV berhasil dibuat di: ${reportFile.path}');
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+      _showSnackBar(context, 'Gagal membuat CSV. Coba lagi.');
+    }
+  }
+
+  Future<File> _writeReportFile({
+    required String extension,
+    required List<int> bytes,
+  }) async {
+    final baseDir = await getApplicationDocumentsDirectory();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final reportFile = File('${baseDir.path}/gsr_report_$timestamp.$extension');
+    return reportFile.writeAsBytes(bytes, flush: true);
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -135,20 +269,36 @@ class _ReportStatCard extends StatelessWidget {
   }
 }
 
-class _MenuRow extends StatelessWidget {
-  const _MenuRow({required this.icon, required this.text});
+class _MenuActionButton extends StatelessWidget {
+  const _MenuActionButton({
+    required this.icon,
+    required this.text,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String text;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 8),
-        Text(text),
-      ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(text)),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

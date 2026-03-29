@@ -8,9 +8,14 @@ import 'home_shell_page.dart';
 import 'onboarding_page.dart';
 
 class AppEntryPage extends StatelessWidget {
-  const AppEntryPage({super.key, required this.showFirebaseWarning});
+  const AppEntryPage({
+    super.key,
+    required this.showFirebaseWarning,
+    required this.showMockSensorInfo,
+  });
 
   final bool showFirebaseWarning;
+  final bool showMockSensorInfo;
 
   @override
   Widget build(BuildContext context) {
@@ -50,15 +55,36 @@ class AppEntryPage extends StatelessWidget {
               Positioned(
                 left: 12,
                 right: 12,
-                bottom: 12,
-                child: Material(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(10),
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'Firebase not configured yet. Running in demo stream mode.',
-                      textAlign: TextAlign.center,
+                bottom: 106,
+                child: IgnorePointer(
+                  child: Material(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(10),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        'Firebase not configured yet. Running in demo stream mode.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (!showFirebaseWarning && showMockSensorInfo)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 106,
+                child: IgnorePointer(
+                  child: Material(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        'Mock sensor aktif. Data dashboard masih dummy, login/signup tetap Firebase.',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ),

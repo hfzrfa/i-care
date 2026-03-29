@@ -16,9 +16,14 @@ import 'presentation/viewmodels/settings_view_model.dart';
 import 'presentation/viewmodels/theme_view_model.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.initializeFirebase = true});
+  const MyApp({
+    super.key,
+    this.initializeFirebase = true,
+    this.useMockSensor = true,
+  });
 
   final bool initializeFirebase;
+  final bool useMockSensor;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +33,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppFlowViewModel()),
         ChangeNotifierProvider(create: (_) => SettingsViewModel()),
         Provider<HealthRemoteDataSource>(
-          create: (_) => initializeFirebase
-              ? FirebaseHealthRemoteDataSource()
-              : const MockHealthRemoteDataSource(),
+          create: (_) {
+            if (!initializeFirebase || useMockSensor) {
+              return const MockHealthRemoteDataSource();
+            }
+            return FirebaseHealthRemoteDataSource();
+          },
         ),
         Provider<HealthRepositoryImpl>(
           create: (context) => HealthRepositoryImpl(
@@ -56,7 +64,10 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: themeVm.themeMode,
-            home: _AppBootstrap(initializeFirebase: initializeFirebase),
+            home: _AppBootstrap(
+              initializeFirebase: initializeFirebase,
+              useMockSensor: useMockSensor,
+            ),
           );
         },
       ),
@@ -65,9 +76,13 @@ class MyApp extends StatelessWidget {
 }
 
 class _AppBootstrap extends StatefulWidget {
-  const _AppBootstrap({required this.initializeFirebase});
+  const _AppBootstrap({
+    required this.initializeFirebase,
+    required this.useMockSensor,
+  });
 
   final bool initializeFirebase;
+  final bool useMockSensor;
 
   @override
   State<_AppBootstrap> createState() => _AppBootstrapState();
@@ -114,6 +129,7 @@ class _AppBootstrapState extends State<_AppBootstrap> {
 
         return AppEntryPage(
           showFirebaseWarning: _bootstrapError != null,
+          showMockSensorInfo: widget.useMockSensor,
         );
       },
     );

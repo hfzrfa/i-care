@@ -17,6 +17,8 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin {
+  static const String _logoAsset = 'assets/images/app_logo2.png';
+
   late final TabController _tabController = TabController(length: 2, vsync: this);
   final _loginEmail = TextEditingController();
   final _loginPassword = TextEditingController();
@@ -69,7 +71,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                       ],
                     ),
                     SizedBox(
-                      height: 340,
+                      height: 390,
                       child: TabBarView(
                         controller: _tabController,
                         children: [
@@ -93,6 +95,15 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset(
+              _logoAsset,
+              height: 86,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(height: 12),
           TextField(
             controller: _loginEmail,
             keyboardType: TextInputType.emailAddress,
@@ -106,7 +117,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
             enabled: !_submitting,
             decoration: const InputDecoration(labelText: 'Password'),
           ),
-          const Spacer(),
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -130,6 +141,15 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset(
+              _logoAsset,
+              height: 86,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(height: 12),
           TextField(
             controller: _signupName,
             enabled: !_submitting,
@@ -149,7 +169,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
             enabled: !_submitting,
             decoration: const InputDecoration(labelText: 'Password'),
           ),
-          const Spacer(),
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
@@ -178,9 +198,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
+      _showAuthFeedback(error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -200,9 +218,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
-      );
+      _showAuthFeedback(error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -210,5 +226,31 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         });
       }
     }
+  }
+
+  void _showAuthFeedback(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger != null) {
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Auth Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

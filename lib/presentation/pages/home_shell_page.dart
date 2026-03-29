@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -34,25 +36,6 @@ class _HomeShellPageState extends State<HomeShellPage> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(_titles[_selectedIndex]),
-        actions: _selectedIndex == 1
-            ? [
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('$value (demo)')),
-                    );
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'Export Report PDF', child: Text('Export Report PDF')),
-                    PopupMenuItem(
-                      value: 'Email Weekly Report',
-                      child: Text('Email Weekly Report'),
-                    ),
-                    PopupMenuItem(value: 'Help & Support', child: Text('Help & Support')),
-                  ],
-                ),
-              ]
-            : const <Widget>[],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -91,22 +74,115 @@ class _HomeShellPageState extends State<HomeShellPage> {
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (value) {
-              setState(() {
-                _selectedIndex = value;
-              });
-            },
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
-              BottomNavigationBarItem(icon: Icon(Icons.assignment_rounded), label: 'Reports'),
-              BottomNavigationBarItem(icon: Icon(Icons.settings_rounded), label: 'Settings'),
-              BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-            ],
+        child: _GlassBottomBar(
+          selectedIndex: _selectedIndex,
+          onTap: (value) {
+            setState(() {
+              _selectedIndex = value;
+            });
+          },
+          isDark: isDark,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassBottomBar extends StatelessWidget {
+  const _GlassBottomBar({
+    required this.selectedIndex,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+  final bool isDark;
+
+  static const _items = [
+    (icon: Icons.dashboard_rounded, label: 'Dashboard'),
+    (icon: Icons.assignment_rounded, label: 'Reports'),
+    (icon: Icons.settings_rounded, label: 'Settings'),
+    (icon: Icons.person_rounded, label: 'Profile'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = isDark ? const Color(0xFF6EE7F2) : const Color(0xFF0AA5BA);
+    final inactiveColor = isDark ? Colors.white70 : const Color(0xFF557270);
+
+    return SafeArea(
+      top: false,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          child: Container(
+            height: 78,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              children: List<Widget>.generate(_items.length, (index) {
+                final item = _items[index];
+                final isSelected = selectedIndex == index;
+
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(22),
+                        onTap: () => onTap(index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 230),
+                          curve: Curves.easeOutCubic,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            gradient: isSelected
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: isDark
+                                        ? [
+                                            const Color(0xFF0E7490).withValues(alpha: 0.72),
+                                            const Color(0xFF0EA5E9).withValues(alpha: 0.52),
+                                          ]
+                                        : [
+                                            const Color(0xFFCCF6FA),
+                                            const Color(0xFFB6ECF2),
+                                          ],
+                                  )
+                                : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                item.icon,
+                                size: 23,
+                                color: isSelected ? activeColor : inactiveColor,
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                item.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  letterSpacing: 0.1,
+                                  color: isSelected ? activeColor : inactiveColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ),
