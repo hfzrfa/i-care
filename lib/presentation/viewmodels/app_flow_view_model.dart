@@ -3,11 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum AppStage {
-  onboarding,
-  authentication,
-  home,
-}
+enum AppStage { onboarding, authentication, home }
 
 class AppFlowViewModel extends ChangeNotifier {
   static const String _keyHasOpenedBefore = 'has_opened_before';
@@ -69,7 +65,9 @@ class AppFlowViewModel extends ChangeNotifier {
           _authenticated = true;
           _email = firebaseUser.email ?? prefs.getString(_keyEmail) ?? _email;
           _displayName =
-              firebaseUser.displayName ?? prefs.getString(_keyDisplayName) ?? _displayName;
+              firebaseUser.displayName ??
+              prefs.getString(_keyDisplayName) ??
+              _displayName;
         } else {
           _authenticated = prefs.getBool(_keyAuthenticated) ?? false;
           _displayName = prefs.getString(_keyDisplayName) ?? _displayName;
@@ -77,9 +75,12 @@ class AppFlowViewModel extends ChangeNotifier {
         }
       } else {
         _onboardingCompleted = prefs.getBool(_keyOnboardingCompleted) ?? false;
-        _authenticated = firebaseUser != null || (prefs.getBool(_keyAuthenticated) ?? false);
+        _authenticated =
+            firebaseUser != null || (prefs.getBool(_keyAuthenticated) ?? false);
         _displayName =
-            firebaseUser?.displayName ?? prefs.getString(_keyDisplayName) ?? _displayName;
+            firebaseUser?.displayName ??
+            prefs.getString(_keyDisplayName) ??
+            _displayName;
         _email = firebaseUser?.email ?? prefs.getString(_keyEmail) ?? _email;
         await prefs.setBool(_keyHasOpenedBefore, true);
       }
@@ -175,7 +176,10 @@ class AppFlowViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile({required String name, required String email}) async {
+  Future<void> updateProfile({
+    required String name,
+    required String email,
+  }) async {
     _displayName = name.trim().isEmpty ? _displayName : name.trim();
     _email = email.trim().isEmpty ? _email : email.trim();
     final auth = _auth;
@@ -225,7 +229,10 @@ class AppFlowViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _syncUserProfile({required User user, required bool created}) async {
+  Future<void> _syncUserProfile({
+    required User user,
+    required bool created,
+  }) async {
     final usersRef = _usersRef;
     if (usersRef == null) {
       return;
@@ -246,7 +253,6 @@ class AppFlowViewModel extends ChangeNotifier {
     try {
       await usersRef.child(user.uid).update(payload);
     } on FirebaseException catch (error) {
-      // Keep auth flow successful even if profile sync is blocked by rules/network.
       debugPrint('Profile sync failed: ${error.code} ${error.message}');
     }
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/utils/stress_level.dart';
 import 'data/datasources/firebase_health_remote_data_source.dart';
 import 'data/models/health_metrics_model.dart';
 import 'data/repositories/health_repository_impl.dart';
@@ -41,19 +42,16 @@ class MyApp extends StatelessWidget {
           },
         ),
         Provider<HealthRepositoryImpl>(
-          create: (context) => HealthRepositoryImpl(
-            context.read<HealthRemoteDataSource>(),
-          ),
+          create: (context) =>
+              HealthRepositoryImpl(context.read<HealthRemoteDataSource>()),
         ),
         Provider<WatchHealthMetricsUseCase>(
-          create: (context) => WatchHealthMetricsUseCase(
-            context.read<HealthRepositoryImpl>(),
-          ),
+          create: (context) =>
+              WatchHealthMetricsUseCase(context.read<HealthRepositoryImpl>()),
         ),
         ChangeNotifierProvider<DashboardViewModel>(
-          create: (context) => DashboardViewModel(
-            context.read<WatchHealthMetricsUseCase>(),
-          ),
+          create: (context) =>
+              DashboardViewModel(context.read<WatchHealthMetricsUseCase>()),
         ),
       ],
       child: Consumer<ThemeViewModel>(
@@ -99,23 +97,38 @@ class _AppBootstrapState extends State<_AppBootstrap> {
   }
 
   Future<void> _bootstrap() async {
+    debugPrint('--- BOOTSTRAP: START ---');
     final flowVm = context.read<AppFlowViewModel>();
     final settingsVm = context.read<SettingsViewModel>();
 
     if (!widget.initializeFirebase) {
+      debugPrint('--- BOOTSTRAP: Skipping Firebase ---');
       await flowVm.initialize();
       await settingsVm.initialize();
       return;
     }
 
     try {
+      debugPrint('--- BOOTSTRAP: Initializing Firebase ---');
       await Firebase.initializeApp();
+      debugPrint('--- BOOTSTRAP: Firebase Initialized ---');
     } catch (error) {
+      debugPrint('--- BOOTSTRAP: Firebase Error: $error ---');
       _bootstrapError = error;
     }
 
+    debugPrint('--- BOOTSTRAP: Initializing AppFlowViewModel ---');
     await flowVm.initialize();
+    debugPrint('--- BOOTSTRAP: Initializing SettingsViewModel ---');
     await settingsVm.initialize();
+
+    if (!mounted) {
+      return;
+    }
+
+    final healthRemoteDataSource = context.read<HealthRemoteDataSource>();
+    healthRemoteDataSource.updatePath(settingsVm.sensorApiPath);
+    debugPrint('--- BOOTSTRAP: DONE ---');
   }
 
   @override
@@ -124,7 +137,9 @@ class _AppBootstrapState extends State<_AppBootstrap> {
       future: _bootstrapFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         return AppEntryPage(
@@ -140,44 +155,52 @@ class MockHealthRemoteDataSource implements HealthRemoteDataSource {
   const MockHealthRemoteDataSource();
 
   @override
+  String get currentPath => 'mock://health_monitoring/latest';
+
+  @override
+  void updatePath(String path) {}
+
+  @override
   Stream<HealthMetricsModel> watchHealthMetrics() {
-    return Stream<HealthMetricsModel>.periodic(
-      const Duration(milliseconds: 800),
-      (tick) {
-        final t = tick.toDouble();
+    return Stream<HealthMetricsModel>.periodic(const Duration(seconds: 2), (
+      tick,
+    ) {
+      final t = tick.toDouble();
 
-        final gsrWave = 4.6 + (math.sin(t / 3.4) * 1.1) + (math.cos(t / 8.0) * 0.5);
-        final gsrJitter = ((tick % 5) - 2) * 0.08;
-        final gsrSpike = tick % 21 == 0
-            ? 1.3
-            : tick % 17 == 0
-                ? -0.9
-                : 0.0;
-        final gsr = (gsrWave + gsrJitter + gsrSpike).clamp(1.3, 9.8);
+      final gsrWave =
+          4.6 + (math.sin(t / 3.4) * 1.1) + (math.cos(t / 8.0) * 0.5);
+      final gsrJitter = ((tick % 5) - 2) * 0.08;
+      final gsrSpike = tick % 21 == 0
+          ? 1.3
+          : tick % 17 == 0
+          ? -0.9
+          : 0.0;
+      final gsr = (gsrWave + gsrJitter + gsrSpike).clamp(1.3, 9.8).toDouble();
 
-        final emgWave = 32 + (math.sin((t + 4) / 2.9) * 7.5) + (math.cos(t / 6.7) * 4.2);
-        final emgJitter = ((tick % 7) - 3) * 0.9;
-        final emgSpike = tick % 19 == 0
-            ? 10.0
-            : tick % 13 == 0
-                ? -6.0
-                : 0.0;
-        final emg = (emgWave + emgJitter + emgSpike).clamp(10.0, 49.0);
+      final emgWave =
+          125 + (math.sin((t + 4) / 2.9) * 26) + (math.cos(t / 6.7) * 14);
+      final emgJitter = ((tick % 7) - 3) * 2.5;
+      final emgSpike = tick % 19 == 0
+          ? 38.0
+          : tick % 13 == 0
+          ? -22.0
+          : 0.0;
+      final emg = (emgWave + emgJitter + emgSpike)
+          .clamp(80.0, 190.0)
+          .toDouble();
+      final status = StressLevelMapper.combinedResult(
+        gsr: gsr,
+        emg: emg,
+      ).category;
 
-        final stressScore = ((gsr / 10) * 0.4 + (emg / 50) * 0.6) * 100;
-        final status = stressScore <= 39
-            ? 'NORMAL'
-            : stressScore <= 69
-                ? 'SEDANG'
-                : 'STRESS';
+      return HealthMetricsModel(
+        stressStatus: status,
+        gsrValue: gsr,
+        emgValue: emg,
+        timestamp: DateTime.now(),
 
-        return HealthMetricsModel(
-          stressStatus: status,
-          gsrValue: gsr,
-          emgValue: emg,
-          timestamp: DateTime.now(),
-        );
-      },
-    );
+        csEnabled: false,
+      );
+    });
   }
 }

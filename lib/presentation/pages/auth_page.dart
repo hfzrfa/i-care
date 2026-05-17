@@ -3,23 +3,24 @@ import 'package:flutter/material.dart';
 import '../widgets/glass_card.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({
-    super.key,
-    required this.onLogin,
-    required this.onSignUp,
-  });
+  const AuthPage({super.key, required this.onLogin, required this.onSignUp});
 
   final Future<void> Function(String email, String password) onLogin;
-  final Future<void> Function(String name, String email, String password) onSignUp;
+  final Future<void> Function(String name, String email, String password)
+  onSignUp;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin {
+class _AuthPageState extends State<AuthPage>
+    with SingleTickerProviderStateMixin {
   static const String _logoAsset = 'assets/images/app_logo2.png';
 
-  late final TabController _tabController = TabController(length: 2, vsync: this);
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
   final _loginEmail = TextEditingController();
   final _loginPassword = TextEditingController();
   final _signupName = TextEditingController();
@@ -48,9 +49,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
           children: [
             Text(
               'Welcome to I-Care',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
@@ -97,11 +98,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              _logoAsset,
-              height: 86,
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset(_logoAsset, height: 86, fit: BoxFit.contain),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -143,11 +140,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              _logoAsset,
-              height: 86,
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset(_logoAsset, height: 86, fit: BoxFit.contain),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -213,7 +206,11 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       _submitting = true;
     });
     try {
-      await widget.onSignUp(_signupName.text, _signupEmail.text, _signupPassword.text);
+      await widget.onSignUp(
+        _signupName.text,
+        _signupEmail.text,
+        _signupPassword.text,
+      );
     } catch (error) {
       if (!mounted) {
         return;

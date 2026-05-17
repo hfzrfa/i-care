@@ -2,32 +2,145 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 
-enum StressLevel {
-  normal,
-  sedang,
-  stress,
-  unknown,
+enum StressLevel { normal, sedang, stress, unknown }
+
+class SensorClassification {
+  const SensorClassification({
+    required this.label,
+    required this.description,
+    required this.color,
+  });
+
+  final String label;
+  final String description;
+  final Color color;
+}
+
+class CombinedStressResult {
+  const CombinedStressResult({
+    required this.category,
+    required this.interpretation,
+    required this.level,
+  });
+
+  final String category;
+  final String interpretation;
+  final StressLevel level;
 }
 
 class StressLevelMapper {
   const StressLevelMapper._();
 
+  static const double gsrNormalMax = 5.0;
+  static const double gsrModerateMax = 12.0;
+  static const double gsrHighMax = 20.0;
+
+  static const double emgRelaxMin = 20.0;
+  static const double emgRelaxMax = 150.0;
+
   static double gsrScore(double gsr) {
-    return ((gsr / 10).clamp(0.0, 1.0)) * 100;
+    return ((gsr.clamp(0.0, gsrHighMax) / gsrHighMax) * 100).toDouble();
   }
 
   static double emgScore(double emg) {
-    return ((emg / 50).clamp(0.0, 1.0)) * 100;
+    final normalized =
+        ((emg - emgRelaxMin) / (emgRelaxMax - emgRelaxMin)) * 100;
+    return normalized.clamp(0.0, 100.0).toDouble();
   }
 
-  static double combinedScore({
+  static SensorClassification gsrClassification(double gsr) {
+    if (gsr <= gsrNormalMax) {
+      return SensorClassification(
+        label: 'Normal',
+        description: '0-5 uS',
+        color: AppColors.normalStress,
+      );
+    }
+    if (gsr <= gsrModerateMax) {
+      return SensorClassification(
+        label: 'Moderate Stress',
+        description: '>5-12 uS',
+        color: AppColors.mediumStress,
+      );
+    }
+    return SensorClassification(
+      label: 'High Stress',
+      description: '>12-20 uS',
+      color: AppColors.highStress,
+    );
+  }
+
+  static SensorClassification emgClassification(double emg) {
+    if (emg <= emgRelaxMax) {
+      return SensorClassification(
+        label: 'Relaks',
+        description: '20-150 uV',
+        color: AppColors.normalStress,
+      );
+    }
+    return SensorClassification(
+      label: 'Stress',
+      description: '>150 uV',
+      color: AppColors.highStress,
+    );
+  }
+
+  static CombinedStressResult combinedResult({
     required double gsr,
     required double emg,
   }) {
-    final gsrNormalized = (gsr / 10).clamp(0.0, 1.0);
-    final emgNormalized = (emg / 50).clamp(0.0, 1.0);
+    final emgStress = emg > emgRelaxMax;
+    final gsrBand = gsr <= gsrNormalMax
+        ? 0
+        : gsr <= gsrModerateMax
+        ? 1
+        : 2;
 
-    return ((gsrNormalized * 0.4) + (emgNormalized * 0.6)) * 100;
+    if (!emgStress && gsrBand == 0) {
+      return const CombinedStressResult(
+        category: 'Normal - Low',
+        interpretation: 'Otot tenang, arousal kulit rendah, individu relaks.',
+        level: StressLevel.normal,
+      );
+    }
+    if (!emgStress && gsrBand == 1) {
+      return const CombinedStressResult(
+        category: 'Normal - Moderate',
+        interpretation:
+            'Otot normal, ada sedikit arousal fisiologis, mungkin stres ringan.',
+        level: StressLevel.sedang,
+      );
+    }
+    if (!emgStress) {
+      return const CombinedStressResult(
+        category: 'Normal - High',
+        interpretation:
+            'Otot normal, tapi arousal tinggi; kemungkinan stres psikologis tanpa ketegangan otot.',
+        level: StressLevel.stress,
+      );
+    }
+    if (gsrBand == 0) {
+      return const CombinedStressResult(
+        category: 'Stres - Low',
+        interpretation:
+            'Aktivitas otot tinggi tapi arousal kulit rendah; kemungkinan ketegangan fisik atau artefak.',
+        level: StressLevel.sedang,
+      );
+    }
+    if (gsrBand == 1) {
+      return const CombinedStressResult(
+        category: 'Stres - Moderate',
+        interpretation:
+            'Aktivitas otot tinggi dan arousal kulit sedang; stres fisik atau mental sedang.',
+        level: StressLevel.stress,
+      );
+    }
+    return const CombinedStressResult(
+      category: 'Stres - High',
+      interpretation:
+          'Aktivitas otot tinggi dan arousal kulit tinggi; stres tinggi atau kecemasan akut.',
+      level: StressLevel.stress,
+    );
   }
 
   static StressLevel fromScore(double score) {
@@ -55,7 +168,10 @@ class StressLevelMapper {
   }
 
   static Color colorFromScore(double score) {
-    final level = fromScore(score);
+    return colorFromLevel(fromScore(score));
+  }
+
+  static Color colorFromLevel(StressLevel level) {
     switch (level) {
       case StressLevel.normal:
         return AppColors.normalStress;
@@ -70,28 +186,21 @@ class StressLevelMapper {
 
   static StressLevel fromStatus(String status) {
     final normalized = status.trim().toUpperCase();
-    if (normalized == 'NORMAL') {
+    if (normalized == 'NORMAL' || normalized == 'RELAKS') {
       return StressLevel.normal;
     }
-    if (normalized == 'SEDANG') {
+    if (normalized == 'SEDANG' || normalized.contains('MODERATE')) {
       return StressLevel.sedang;
     }
-    if (normalized == 'STRESS' || normalized == 'TINGGI') {
+    if (normalized == 'STRESS' ||
+        normalized == 'TINGGI' ||
+        normalized.contains('HIGH')) {
       return StressLevel.stress;
     }
     return StressLevel.unknown;
   }
 
   static Color toColor(String status) {
-    switch (fromStatus(status)) {
-      case StressLevel.normal:
-        return AppColors.normalStress;
-      case StressLevel.sedang:
-        return AppColors.mediumStress;
-      case StressLevel.stress:
-        return AppColors.highStress;
-      case StressLevel.unknown:
-        return Colors.grey;
-    }
+    return colorFromLevel(fromStatus(status));
   }
 }

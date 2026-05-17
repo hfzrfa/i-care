@@ -9,6 +9,8 @@ class HealthRepositoryImpl implements HealthRepository {
 
   @override
   Stream<HealthMetrics> watchHealthMetrics() {
-    return _remoteDataSource.watchHealthMetrics().map((model) => model.toEntity());
+    return _remoteDataSource.watchHealthMetrics().map(
+      (model) => model.toEntity(),
+    );
   }
 }

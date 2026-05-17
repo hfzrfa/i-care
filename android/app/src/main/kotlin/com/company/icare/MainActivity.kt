@@ -1,4 +1,4 @@
-package com.example.gsrapp
+package com.company.icare
 
 import io.flutter.embedding.android.FlutterActivity
 

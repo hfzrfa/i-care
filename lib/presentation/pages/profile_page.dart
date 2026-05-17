@@ -15,12 +15,14 @@ class _ProfilePageState extends State<ProfilePage> {
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
 
+  String _lastSyncedName = '';
+  String _lastSyncedEmail = '';
+
   @override
   void initState() {
     super.initState();
-    final vm = context.read<AppFlowViewModel>();
-    _nameController = TextEditingController(text: vm.displayName);
-    _emailController = TextEditingController(text: vm.email);
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
   }
 
   @override
@@ -30,10 +32,23 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  void _syncControllers(AppFlowViewModel vm) {
+    if (vm.displayName != _lastSyncedName) {
+      _lastSyncedName = vm.displayName;
+      _nameController.text = vm.displayName;
+    }
+    if (vm.email != _lastSyncedEmail) {
+      _lastSyncedEmail = vm.email;
+      _emailController.text = vm.email;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppFlowViewModel>(
       builder: (context, vm, _) {
+        _syncControllers(vm);
+
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(
@@ -52,19 +67,24 @@ class _ProfilePageState extends State<ProfilePage> {
                     CircleAvatar(
                       radius: 34,
                       child: Text(
-                        vm.displayName.isNotEmpty ? vm.displayName[0].toUpperCase() : 'U',
+                        vm.displayName.isNotEmpty
+                            ? vm.displayName[0].toUpperCase()
+                            : 'U',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Display Name'),
+                      decoration: const InputDecoration(
+                        labelText: 'Display Name',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Email'),
+                      readOnly: true,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -77,7 +97,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                 email: _emailController.text,
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Profile updated (demo).')),
+                                const SnackBar(
+                                  content: Text('Profile updated.'),
+                                ),
                               );
                             },
                             child: const Text('Save Changes'),

@@ -33,18 +33,21 @@ class _HomeShellPageState extends State<HomeShellPage> {
 
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(_titles[_selectedIndex]),
-      ),
+      appBar: AppBar(centerTitle: true, title: Text(_titles[_selectedIndex])),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: isDark
-                ? const [AppColors.darkBackgroundTop, AppColors.darkBackgroundBottom]
-                : const [AppColors.lightBackgroundTop, AppColors.lightBackgroundBottom],
+                ? const [
+                    AppColors.darkBackgroundTop,
+                    AppColors.darkBackgroundBottom,
+                  ]
+                : const [
+                    AppColors.lightBackgroundTop,
+                    AppColors.lightBackgroundBottom,
+                  ],
             stops: const [0.15, 1.0],
           ),
         ),
@@ -108,7 +111,9 @@ class _GlassBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isDark ? const Color(0xFF6EE7F2) : const Color(0xFF0AA5BA);
+    final activeColor = isDark
+        ? const Color(0xFF6EE7F2)
+        : const Color(0xFF0AA5BA);
     final inactiveColor = isDark ? Colors.white70 : const Color(0xFF557270);
 
     return SafeArea(
@@ -119,9 +124,7 @@ class _GlassBottomBar extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             height: 78,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(30)),
             child: Row(
               children: List<Widget>.generate(_items.length, (index) {
                 final item = _items[index];
@@ -129,7 +132,10 @@ class _GlassBottomBar extends StatelessWidget {
 
                 return Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 8,
+                    ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
@@ -146,8 +152,12 @@ class _GlassBottomBar extends StatelessWidget {
                                     end: Alignment.bottomRight,
                                     colors: isDark
                                         ? [
-                                            const Color(0xFF0E7490).withValues(alpha: 0.72),
-                                            const Color(0xFF0EA5E9).withValues(alpha: 0.52),
+                                            const Color(
+                                              0xFF0E7490,
+                                            ).withValues(alpha: 0.72),
+                                            const Color(
+                                              0xFF0EA5E9,
+                                            ).withValues(alpha: 0.52),
                                           ]
                                         : [
                                             const Color(0xFFCCF6FA),
@@ -169,9 +179,13 @@ class _GlassBottomBar extends StatelessWidget {
                                 item.label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                   letterSpacing: 0.1,
-                                  color: isSelected ? activeColor : inactiveColor,
+                                  color: isSelected
+                                      ? activeColor
+                                      : inactiveColor,
                                 ),
                               ),
                             ],

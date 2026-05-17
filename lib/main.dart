@@ -5,11 +5,11 @@ import 'app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   const useFirebase = bool.fromEnvironment('USE_FIREBASE', defaultValue: true);
-  const useMockSensor = bool.fromEnvironment('USE_MOCK_SENSOR', defaultValue: true);
+  const useMockSensor = bool.fromEnvironment(
+    'USE_MOCK_SENSOR',
+    defaultValue: false,
+  );
   runApp(
-    const MyApp(
-      initializeFirebase: useFirebase,
-      useMockSensor: useMockSensor,
-    ),
+    const MyApp(initializeFirebase: useFirebase, useMockSensor: useMockSensor),
   );
 }

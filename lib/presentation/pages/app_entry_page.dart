@@ -37,15 +37,24 @@ class AppEntryPage extends StatelessWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: isDark
-                      ? const [AppColors.darkBackgroundTop, AppColors.darkBackgroundBottom]
-                      : const [AppColors.lightBackgroundTop, AppColors.lightBackgroundBottom],
+                      ? const [
+                          AppColors.darkBackgroundTop,
+                          AppColors.darkBackgroundBottom,
+                        ]
+                      : const [
+                          AppColors.lightBackgroundTop,
+                          AppColors.lightBackgroundBottom,
+                        ],
                 ),
               ),
             ),
             switch (flowVm.stage) {
-              AppStage.onboarding => OnboardingPage(onContinue: flowVm.completeOnboarding),
+              AppStage.onboarding => OnboardingPage(
+                onContinue: flowVm.completeOnboarding,
+              ),
               AppStage.authentication => AuthPage(
-                onLogin: (email, password) => flowVm.login(email: email, password: password),
+                onLogin: (email, password) =>
+                    flowVm.login(email: email, password: password),
                 onSignUp: (name, email, password) =>
                     flowVm.signUp(name: name, email: email, password: password),
               ),

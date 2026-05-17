@@ -18,17 +18,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final List<_OnboardingItem> _items = const [
     _OnboardingItem(
       title: 'Realtime Stress Insight',
-      description: 'Monitor GSR and EMG signals continuously from wearable IoT sensors.',
+      description:
+          'Monitor GSR and EMG signals continuously from wearable IoT sensors.',
       icon: Icons.monitor_heart_outlined,
     ),
     _OnboardingItem(
       title: 'Clinical-Grade Dashboard',
-      description: 'Track trends, status levels, and medical summaries in one clean workspace.',
+      description:
+          'Track trends, status levels, and medical summaries in one clean workspace.',
       icon: Icons.insights_outlined,
     ),
     _OnboardingItem(
       title: 'Personalized Health Reports',
-      description: 'Generate stress snapshots and weekly summaries to support intervention.',
+      description:
+          'Generate stress snapshots and weekly summaries to support intervention.',
       icon: Icons.assignment_outlined,
     ),
   ];
@@ -75,9 +78,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       Text(
                         item.title,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -103,7 +105,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     borderRadius: BorderRadius.circular(12),
                     color: _currentPage == index
                         ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.primary.withValues(alpha: 0.28),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.28),
                   ),
                 ),
               ),
@@ -120,7 +124,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           curve: Curves.easeOut,
                         );
                       },
-                child: Text(_currentPage == _items.length - 1 ? 'Get Started' : 'Next'),
+                child: Text(
+                  _currentPage == _items.length - 1 ? 'Get Started' : 'Next',
+                ),
               ),
             ),
           ],

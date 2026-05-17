@@ -43,16 +43,21 @@ class RealtimeLineChart extends StatelessWidget {
                   horizontalInterval: yInterval,
                 ),
                 titlesData: FlTitlesData(
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 34,
                       interval: yInterval,
                       getTitlesWidget: (value, meta) {
-                        // Hide the upper bound label so it doesn't overlap title.
                         if (value >= maxY - (yInterval / 4)) {
                           return const SizedBox.shrink();
                         }
