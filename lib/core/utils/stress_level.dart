@@ -193,6 +193,7 @@ class StressLevelMapper {
       return StressLevel.sedang;
     }
     if (normalized == 'STRESS' ||
+        normalized == 'STRES' ||
         normalized == 'TINGGI' ||
         normalized.contains('HIGH')) {
       return StressLevel.stress;

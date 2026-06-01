@@ -23,6 +23,8 @@ static const int EMG_PIN = 35;
 static const uint32_t SERIAL_BAUD = 115200;
 static const uint32_t UPLOAD_RETRY_COUNT = 3;
 static const uint32_t UPLOAD_RETRY_DELAY_MS = 250;
+static const int ADC_FILTER_SAMPLES = 9;
+static const float SENSOR_FILTER_ALPHA = 0.28f;
 
 FirebaseData fbdo;
 FirebaseAuth auth;
@@ -254,6 +256,33 @@ float mapAdcToRange(float raw, float minAdc, float maxAdc, float minValue, float
   return clampRange(mapped, minValue, maxValue);
 }
 
+uint16_t readMedianAdc(int pin) {
+  uint16_t samples[ADC_FILTER_SAMPLES];
+  for (int i = 0; i < ADC_FILTER_SAMPLES; i++) {
+    samples[i] = (uint16_t)analogRead(pin);
+    delayMicroseconds(180);
+  }
+
+  for (int i = 1; i < ADC_FILTER_SAMPLES; i++) {
+    const uint16_t key = samples[i];
+    int j = i - 1;
+    while (j >= 0 && samples[j] > key) {
+      samples[j + 1] = samples[j];
+      j--;
+    }
+    samples[j + 1] = key;
+  }
+
+  return samples[ADC_FILTER_SAMPLES / 2];
+}
+
+float smoothSensorValue(float previous, float current, bool initialized) {
+  if (!initialized) {
+    return current;
+  }
+  return (previous * (1.0f - SENSOR_FILTER_ALPHA)) + (current * SENSOR_FILTER_ALPHA);
+}
+
 static const float GSR_ADC_MIN = 400.0f;
 static const float GSR_ADC_MAX = 3200.0f;
 static const float EMG_ADC_MIN = 500.0f;
@@ -265,13 +294,23 @@ static const float EMG_UV_MAX = 250.0f;
 
 void fillCsBuffer() {
   cs_buffer_index = 0;
+  static bool filterInitialized = false;
+  static float gsrFiltered = 0.0f;
+  static float emgFiltered = 0.0f;
 
   for (int i = 0; i < CS_N; i++) {
-    const float gsrRaw = (float)analogRead(GSR_PIN);
-    const float emgRaw = (float)analogRead(EMG_PIN);
+    const float gsrRaw = (float)readMedianAdc(GSR_PIN);
+    const float emgRaw = (float)readMedianAdc(EMG_PIN);
 
-    cs_gsr_buffer[i] = mapAdcToRange(gsrRaw, GSR_ADC_MIN, GSR_ADC_MAX, GSR_US_MIN, GSR_US_MAX);
-    cs_emg_buffer[i] = mapAdcToRange(emgRaw, EMG_ADC_MIN, EMG_ADC_MAX, EMG_UV_MIN, EMG_UV_MAX);
+    const float gsrMapped = mapAdcToRange(gsrRaw, GSR_ADC_MIN, GSR_ADC_MAX, GSR_US_MIN, GSR_US_MAX);
+    const float emgMapped = mapAdcToRange(emgRaw, EMG_ADC_MIN, EMG_ADC_MAX, EMG_UV_MIN, EMG_UV_MAX);
+
+    gsrFiltered = smoothSensorValue(gsrFiltered, gsrMapped, filterInitialized);
+    emgFiltered = smoothSensorValue(emgFiltered, emgMapped, filterInitialized);
+    filterInitialized = true;
+
+    cs_gsr_buffer[i] = gsrFiltered;
+    cs_emg_buffer[i] = emgFiltered;
 
     
     delayMicroseconds(CS_SAMPLE_DELAY_US);
@@ -310,12 +349,12 @@ String classifyCombinedStress(float gsrUs, float emgUv) {
   const bool gsrNormal = gsrUs <= 5.0f;
   const bool gsrModerate = gsrUs > 5.0f && gsrUs <= 12.0f;
 
-  if (!emgStress && gsrNormal) return "Relaks - Normal";
-  if (!emgStress && gsrModerate) return "Relaks - Moderate";
-  if (!emgStress) return "Relaks - High";
-  if (gsrNormal) return "Stress - Normal";
-  if (gsrModerate) return "Stress - Moderate";
-  return "Stress - High";
+  if (!emgStress && gsrNormal) return "Normal - Low";
+  if (!emgStress && gsrModerate) return "Normal - Moderate";
+  if (!emgStress) return "Normal - High";
+  if (gsrNormal) return "Stres - Low";
+  if (gsrModerate) return "Stres - Moderate";
+  return "Stres - High";
 }
 
 float combinedStressIndex(float gsrUs, float emgUv) {
@@ -446,6 +485,10 @@ void setup() {
 
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
+  analogSetPinAttenuation(GSR_PIN, ADC_11db);
+  analogSetPinAttenuation(EMG_PIN, ADC_11db);
+  pinMode(GSR_PIN, INPUT);
+  pinMode(EMG_PIN, INPUT);
 
   connectWiFi();
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
@@ -515,4 +558,3 @@ void loop() {
   
   delay(100);
 }
-
