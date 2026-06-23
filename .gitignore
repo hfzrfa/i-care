@@ -3,6 +3,18 @@
 *.log
 *.pyc
 *.swp
+*.doc
+*.docx
+*.pdf
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex*
 .DS_Store
 .atom/
 .build/
@@ -11,7 +23,11 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
+backup_non_runtime/
+proposal_extracted*.txt
+docs/
+icare_direct/
+_laporan_latex/
 # IntelliJ related
 *.iml
 *.ipr
@@ -43,3 +59,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# PlatformIO / embedded local files
+**/.pio/
+**/.vscode/
+esp32/**/Secrets.h

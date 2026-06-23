@@ -6,6 +6,9 @@ class HealthMetricsModel {
     required this.gsrValue,
     required this.emgValue,
     required this.timestamp,
+    this.sensorsAttached = true,
+    this.gsrSignalValid = true,
+    this.emgSignalValid = true,
     this.csEnabled = false,
     this.csN,
     this.csM,
@@ -23,6 +26,9 @@ class HealthMetricsModel {
   final double gsrValue;
   final double emgValue;
   final DateTime timestamp;
+  final bool sensorsAttached;
+  final bool gsrSignalValid;
+  final bool emgSignalValid;
 
   final bool csEnabled;
 
@@ -57,6 +63,9 @@ class HealthMetricsModel {
         gsrValue: _readDouble(map, const ['gsr', 'gsr_value', 'gsrValue']),
         emgValue: _readDouble(map, const ['emg', 'emg_value', 'emgValue']),
         timestamp: _readTimestamp(map),
+        sensorsAttached: _readBool(map, 'sensors_attached', fallback: true),
+        gsrSignalValid: _readBool(map, 'gsr_signal_valid', fallback: true),
+        emgSignalValid: _readBool(map, 'emg_signal_valid', fallback: true),
         csEnabled: true,
         csN: _readInt(map, ['cs_n']),
         csM: _readInt(map, ['cs_m']),
@@ -72,6 +81,9 @@ class HealthMetricsModel {
       gsrValue: _readDouble(map, const ['gsr', 'gsr_value', 'gsrValue']),
       emgValue: _readDouble(map, const ['emg', 'emg_value', 'emgValue']),
       timestamp: _readTimestamp(map),
+      sensorsAttached: _readBool(map, 'sensors_attached', fallback: true),
+      gsrSignalValid: _readBool(map, 'gsr_signal_valid', fallback: true),
+      emgSignalValid: _readBool(map, 'emg_signal_valid', fallback: true),
     );
   }
 
@@ -81,6 +93,9 @@ class HealthMetricsModel {
       stressStatus: stressStatus,
       gsrValue: gsrValue,
       emgValue: emgValue,
+      sensorsAttached: sensorsAttached,
+      gsrSignalValid: gsrSignalValid,
+      emgSignalValid: emgSignalValid,
       csEnabled: csEnabled,
       compressionRatio: compressionRatio,
       reconstructionRmse: reconstructionRmse,
@@ -123,6 +138,22 @@ class HealthMetricsModel {
       if (value is String) return int.tryParse(value);
     }
     return null;
+  }
+
+  static bool _readBool(
+    Map<dynamic, dynamic> map,
+    String key, {
+    required bool fallback,
+  }) {
+    final value = map[key];
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1') return true;
+      if (normalized == 'false' || normalized == '0') return false;
+    }
+    return fallback;
   }
 
   static List<double>? _readDoubleList(Map<dynamic, dynamic> map, String key) {

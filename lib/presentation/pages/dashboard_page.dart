@@ -54,8 +54,24 @@ class _DashboardPageState extends State<DashboardPage> {
         final emgClassification = StressLevelMapper.emgClassification(
           metrics.emgValue,
         );
-        final gsrStatusColor = gsrClassification.color;
-        final emgStatusColor = emgClassification.color;
+        final gsrStatusColor = metrics.gsrSignalValid
+            ? gsrClassification.color
+            : Colors.grey;
+        final emgStatusColor = metrics.emgSignalValid
+            ? emgClassification.color
+            : Colors.grey;
+        final gsrStatus = metrics.gsrSignalValid
+            ? gsrClassification.label
+            : 'Belum Terpasang';
+        final emgStatus = metrics.emgSignalValid
+            ? emgClassification.label
+            : 'Belum Terpasang';
+        final gsrValueText = metrics.gsrSignalValid
+            ? '${metrics.gsrValue.toStringAsFixed(2)} uS'
+            : '--';
+        final emgValueText = metrics.emgSignalValid
+            ? '${metrics.emgValue.toStringAsFixed(2)} uV'
+            : '--';
         final gsrScoreHistory = vm.gsrHistory
             .map(StressLevelMapper.gsrScore)
             .toList();
@@ -72,8 +88,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 Expanded(
                   child: _StressSummaryCard(
                     title: 'Stres Kulit',
-                    status: gsrClassification.label,
-                    valueText: '${metrics.gsrValue.toStringAsFixed(2)} uS',
+                    status: gsrStatus,
+                    valueText: gsrValueText,
                     statusColor: gsrStatusColor,
                     icon: Icons.sentiment_neutral_rounded,
                   ),
@@ -82,8 +98,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 Expanded(
                   child: _StressSummaryCard(
                     title: 'Stres Otot',
-                    status: emgClassification.label,
-                    valueText: '${metrics.emgValue.toStringAsFixed(2)} uV',
+                    status: emgStatus,
+                    valueText: emgValueText,
                     statusColor: emgStatusColor,
                     icon: Icons.fitness_center_rounded,
                   ),
@@ -94,15 +110,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
             _SensorValueCard(
               title: 'GSR Value',
-              value: '${metrics.gsrValue.toStringAsFixed(2)} uS',
+              value: gsrValueText,
               color: gsrStatusColor,
               icon: Icons.waves_outlined,
             ),
             const SizedBox(height: 12),
             _StressGraphCard(
               title: 'Grafik Stres Kulit',
-              status: gsrClassification.label,
-              valueText: '${metrics.gsrValue.toStringAsFixed(2)} uS',
+              status: gsrStatus,
+              valueText: gsrValueText,
               points: gsrScoreHistory,
               color: gsrStatusColor,
             ),
@@ -111,15 +127,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
             _SensorValueCard(
               title: 'EMG Value',
-              value: '${metrics.emgValue.toStringAsFixed(2)} uV',
+              value: emgValueText,
               color: emgStatusColor,
               icon: Icons.graphic_eq,
             ),
             const SizedBox(height: 12),
             _StressGraphCard(
               title: 'Grafik Stress Otot',
-              status: emgClassification.label,
-              valueText: '${metrics.emgValue.toStringAsFixed(2)} uV',
+              status: emgStatus,
+              valueText: emgValueText,
               points: emgScoreHistory,
               color: emgStatusColor,
             ),

@@ -12,6 +12,8 @@ static const uint32_t CS_SAMPLING_RATE_HZ = 100;
 static const uint32_t CS_SAMPLE_DELAY_US = 1000000UL / CS_SAMPLING_RATE_HZ;
 
 static float cs_phi[CS_M][CS_N];
+static float cs_psi[CS_N][CS_N];
+static float cs_dwt_coeffs[CS_N];
 
 static float cs_gsr_buffer[CS_N];
 static float cs_emg_buffer[CS_N];
@@ -48,11 +50,55 @@ static void cs_generate_measurement_matrix() {
   }
 }
 
+static void cs_generate_wavelet_basis() {
+  const float invSqrtN = 1.0f / sqrtf((float)CS_N);
+  for (int i = 0; i < CS_N; i++) {
+    for (int j = 0; j < CS_N; j++) {
+      cs_psi[i][j] = 0.0f;
+    }
+  }
+
+  for (int i = 0; i < CS_N; i++) {
+    cs_psi[i][0] = invSqrtN;
+  }
+
+  for (int k = 1; k < CS_N; k++) {
+    int p = 0;
+    while ((1 << (p + 1)) <= k) {
+      p++;
+    }
+    const int q = k - (1 << p);
+    const float factor = powf(2.0f, (float)p / 2.0f) / sqrtf((float)CS_N);
+    const int block = CS_N >> p;
+    const int start = q * block;
+    const int mid = start + (block >> 1);
+    const int end = start + block;
+
+    for (int i = start; i < mid; i++) {
+      cs_psi[i][k] = factor;
+    }
+    for (int i = mid; i < end; i++) {
+      cs_psi[i][k] = -factor;
+    }
+  }
+}
+
+static void cs_forward_dwt(const float* x, float* coeffs) {
+  for (int k = 0; k < CS_N; k++) {
+    float sum = 0.0f;
+    for (int i = 0; i < CS_N; i++) {
+      sum += cs_psi[i][k] * x[i];
+    }
+    coeffs[k] = sum;
+  }
+}
+
 static void cs_compress_signal(const float* x, float* y) {
+  cs_forward_dwt(x, cs_dwt_coeffs);
   for (int i = 0; i < CS_M; i++) {
     float sum = 0.0f;
     for (int j = 0; j < CS_N; j++) {
-      sum += cs_phi[i][j] * x[j];
+      sum += cs_phi[i][j] * cs_dwt_coeffs[j];
     }
     y[i] = sum;
   }

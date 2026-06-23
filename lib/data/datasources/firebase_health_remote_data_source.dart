@@ -104,7 +104,7 @@ class FirebaseHealthRemoteDataSource implements HealthRemoteDataSource {
       _CsInput(
         compressedGsr: model.compressedGsr!,
         compressedEmg: model.compressedEmg!,
-        sensingMatrix: cs.sensingMatrix,
+        phi: cs.phi,
         psi: cs.psi,
         n: model.csN!,
         m: model.csM!,
@@ -118,17 +118,19 @@ class FirebaseHealthRemoteDataSource implements HealthRemoteDataSource {
       'CR=${results.compressionRatio.toStringAsFixed(2)}',
     );
 
-    final gsrAvg = model.gsrValue > 0 ? model.gsrValue : results.gsrAvg;
-    final emgAvg = model.emgValue > 0 ? model.emgValue : results.emgAvg;
-    final stressStatus = StressLevelMapper.combinedResult(
-      gsr: gsrAvg,
-      emg: emgAvg,
-    ).category;
+    final gsrAvg = model.gsrSignalValid ? results.gsrAvg : 0.0;
+    final emgAvg = model.emgSignalValid ? results.emgAvg : 0.0;
+    final stressStatus = model.sensorsAttached
+        ? StressLevelMapper.combinedResult(gsr: gsrAvg, emg: emgAvg).category
+        : 'SENSOR_NOT_ATTACHED';
 
     return HealthMetricsModel(
       stressStatus: stressStatus,
       gsrValue: gsrAvg,
       emgValue: emgAvg,
+      sensorsAttached: model.sensorsAttached,
+      gsrSignalValid: model.gsrSignalValid,
+      emgSignalValid: model.emgSignalValid,
       timestamp: model.timestamp,
       csEnabled: true,
       csN: model.csN,
@@ -148,7 +150,7 @@ class _CsInput {
   const _CsInput({
     required this.compressedGsr,
     required this.compressedEmg,
-    required this.sensingMatrix,
+    required this.phi,
     required this.psi,
     required this.n,
     required this.m,
@@ -157,7 +159,7 @@ class _CsInput {
 
   final List<double> compressedGsr;
   final List<double> compressedEmg;
-  final List<List<double>> sensingMatrix;
+  final List<List<double>> phi;
   final List<List<double>> psi;
   final int n;
   final int m;
@@ -181,19 +183,11 @@ class _CsOutput {
 }
 
 _CsOutput _csReconstructIsolate(_CsInput input) {
-  final gsrSparse = _ompSolve(
-    input.compressedGsr,
-    input.sensingMatrix,
-    input.sparsity,
-  );
+  final gsrSparse = _ompSolve(input.compressedGsr, input.phi, input.sparsity);
   final gsrRaw = _inverseTransform(gsrSparse, input.psi);
   final gsrSignal = gsrRaw.map((v) => v < 0 ? 0.0 : v).toList();
 
-  final emgSparse = _ompSolve(
-    input.compressedEmg,
-    input.sensingMatrix,
-    input.sparsity,
-  );
+  final emgSparse = _ompSolve(input.compressedEmg, input.phi, input.sparsity);
   final emgRaw = _inverseTransform(emgSparse, input.psi);
   final emgSignal = emgRaw.map((v) => v < 0 ? 0.0 : v).toList();
 

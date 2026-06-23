@@ -124,21 +124,25 @@ class DashboardViewModel extends ChangeNotifier {
       }
     }
 
-    if (_gsrHistory.isNotEmpty) {
+    if (metrics.gsrSignalValid && _gsrHistory.isNotEmpty) {
       _gsrTrend = _resolveTrend(
         previous: _gsrHistory.last,
         current: metrics.gsrValue,
       );
     }
-    if (_emgHistory.isNotEmpty) {
+    if (metrics.emgSignalValid && _emgHistory.isNotEmpty) {
       _emgTrend = _resolveTrend(
         previous: _emgHistory.last,
         current: metrics.emgValue,
       );
     }
 
-    _gsrHistory.add(metrics.gsrValue);
-    _emgHistory.add(metrics.emgValue);
+    if (metrics.gsrSignalValid) {
+      _gsrHistory.add(metrics.gsrValue);
+    }
+    if (metrics.emgSignalValid) {
+      _emgHistory.add(metrics.emgValue);
+    }
 
     if (_gsrHistory.length > _maxPoints) {
       _gsrHistory.removeAt(0);

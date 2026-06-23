@@ -35,52 +35,50 @@ class StressLevelMapper {
   static const double gsrModerateMax = 12.0;
   static const double gsrHighMax = 20.0;
 
-  static const double emgRelaxMin = 20.0;
-  static const double emgRelaxMax = 150.0;
+  static const double emgNormalMax = 200.0;
 
   static double gsrScore(double gsr) {
     return ((gsr.clamp(0.0, gsrHighMax) / gsrHighMax) * 100).toDouble();
   }
 
   static double emgScore(double emg) {
-    final normalized =
-        ((emg - emgRelaxMin) / (emgRelaxMax - emgRelaxMin)) * 100;
+    final normalized = (emg / emgNormalMax) * 100;
     return normalized.clamp(0.0, 100.0).toDouble();
   }
 
   static SensorClassification gsrClassification(double gsr) {
     if (gsr <= gsrNormalMax) {
       return SensorClassification(
-        label: 'Normal',
-        description: '0-5 uS',
+        label: 'Low',
+        description: '1-5 uS',
         color: AppColors.normalStress,
       );
     }
     if (gsr <= gsrModerateMax) {
       return SensorClassification(
-        label: 'Moderate Stress',
+        label: 'Moderate',
         description: '>5-12 uS',
         color: AppColors.mediumStress,
       );
     }
     return SensorClassification(
-      label: 'High Stress',
+      label: 'High',
       description: '>12-20 uS',
       color: AppColors.highStress,
     );
   }
 
   static SensorClassification emgClassification(double emg) {
-    if (emg <= emgRelaxMax) {
+    if (emg < emgNormalMax) {
       return SensorClassification(
-        label: 'Relaks',
-        description: '20-150 uV',
+        label: 'Normal',
+        description: '<200 uV',
         color: AppColors.normalStress,
       );
     }
     return SensorClassification(
       label: 'Stress',
-      description: '>150 uV',
+      description: '>200 uV',
       color: AppColors.highStress,
     );
   }
@@ -89,7 +87,7 @@ class StressLevelMapper {
     required double gsr,
     required double emg,
   }) {
-    final emgStress = emg > emgRelaxMax;
+    final emgStress = emg >= emgNormalMax;
     final gsrBand = gsr <= gsrNormalMax
         ? 0
         : gsr <= gsrModerateMax
@@ -186,7 +184,7 @@ class StressLevelMapper {
 
   static StressLevel fromStatus(String status) {
     final normalized = status.trim().toUpperCase();
-    if (normalized == 'NORMAL' || normalized == 'RELAKS') {
+    if (normalized == 'NORMAL' || normalized == 'LOW') {
       return StressLevel.normal;
     }
     if (normalized == 'SEDANG' || normalized.contains('MODERATE')) {

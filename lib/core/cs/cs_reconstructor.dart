@@ -70,7 +70,7 @@ class CsReconstructor {
 
     final sparseCoeffs = OmpSolver.solve(
       y: compressedY,
-      sensingMatrix: sensingMatrix,
+      sensingMatrix: phi,
       sparsity: sparsity,
     );
 

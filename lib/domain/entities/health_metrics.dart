@@ -4,6 +4,9 @@ class HealthMetrics {
     required this.stressStatus,
     required this.gsrValue,
     required this.emgValue,
+    this.sensorsAttached = true,
+    this.gsrSignalValid = true,
+    this.emgSignalValid = true,
     this.csEnabled = false,
     this.compressionRatio,
     this.reconstructionRmse,
@@ -15,6 +18,9 @@ class HealthMetrics {
   final String stressStatus;
   final double gsrValue;
   final double emgValue;
+  final bool sensorsAttached;
+  final bool gsrSignalValid;
+  final bool emgSignalValid;
 
   final bool csEnabled;
 
@@ -31,6 +37,9 @@ class HealthMetrics {
     String? stressStatus,
     double? gsrValue,
     double? emgValue,
+    bool? sensorsAttached,
+    bool? gsrSignalValid,
+    bool? emgSignalValid,
     bool? csEnabled,
     double? compressionRatio,
     double? reconstructionRmse,
@@ -42,6 +51,9 @@ class HealthMetrics {
       stressStatus: stressStatus ?? this.stressStatus,
       gsrValue: gsrValue ?? this.gsrValue,
       emgValue: emgValue ?? this.emgValue,
+      sensorsAttached: sensorsAttached ?? this.sensorsAttached,
+      gsrSignalValid: gsrSignalValid ?? this.gsrSignalValid,
+      emgSignalValid: emgSignalValid ?? this.emgSignalValid,
       csEnabled: csEnabled ?? this.csEnabled,
       compressionRatio: compressionRatio ?? this.compressionRatio,
       reconstructionRmse: reconstructionRmse ?? this.reconstructionRmse,
