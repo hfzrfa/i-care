@@ -63,4 +63,5 @@ app.*.map.json
 # PlatformIO / embedded local files
 **/.pio/
 **/.vscode/
+**/.laporan_latex/
 esp32/**/Secrets.h
