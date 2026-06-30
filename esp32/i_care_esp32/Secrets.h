@@ -12,4 +12,4 @@
 
 #define DEVICE_ID "esp32_device_01"
 
-#endif 
+#endif

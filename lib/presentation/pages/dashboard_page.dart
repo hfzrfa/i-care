@@ -5,6 +5,12 @@ import 'package:provider/provider.dart';
 import '../../core/utils/stress_level.dart';
 import '../viewmodels/dashboard_view_model.dart';
 
+// Ubah angka ini kalau ingin mengganti skala maksimal grafik dashboard.
+const double kGsrChartMaxY = 20.0;
+const double kEmgChartMaxY = 250.0;
+const double kGsrChartInterval = 5.0;
+const double kEmgChartInterval = 50.0;
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -72,12 +78,8 @@ class _DashboardPageState extends State<DashboardPage> {
         final emgValueText = metrics.emgSignalValid
             ? '${metrics.emgValue.toStringAsFixed(2)} uV'
             : '--';
-        final gsrScoreHistory = vm.gsrHistory
-            .map(StressLevelMapper.gsrScore)
-            .toList();
-        final emgScoreHistory = vm.emgHistory
-            .map(StressLevelMapper.emgScore)
-            .toList();
+        final gsrValueHistory = vm.gsrHistory;
+        final emgValueHistory = vm.emgHistory;
 
         return ListView(
           physics: const BouncingScrollPhysics(),
@@ -119,8 +121,11 @@ class _DashboardPageState extends State<DashboardPage> {
               title: 'Grafik Stres Kulit',
               status: gsrStatus,
               valueText: gsrValueText,
-              points: gsrScoreHistory,
+              points: gsrValueHistory,
               color: gsrStatusColor,
+              maxY: kGsrChartMaxY,
+              yInterval: kGsrChartInterval,
+              yAxisUnit: 'uS',
             ),
 
             const SizedBox(height: 20),
@@ -136,8 +141,11 @@ class _DashboardPageState extends State<DashboardPage> {
               title: 'Grafik Stress Otot',
               status: emgStatus,
               valueText: emgValueText,
-              points: emgScoreHistory,
+              points: emgValueHistory,
               color: emgStatusColor,
+              maxY: kEmgChartMaxY,
+              yInterval: kEmgChartInterval,
+              yAxisUnit: 'uV',
             ),
           ],
         );
@@ -277,6 +285,9 @@ class _StressGraphCard extends StatelessWidget {
     required this.valueText,
     required this.points,
     required this.color,
+    required this.maxY,
+    required this.yInterval,
+    required this.yAxisUnit,
   });
 
   final String title;
@@ -284,6 +295,9 @@ class _StressGraphCard extends StatelessWidget {
   final String valueText;
   final List<double> points;
   final Color color;
+  final double maxY;
+  final double yInterval;
+  final String yAxisUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -357,11 +371,11 @@ class _StressGraphCard extends StatelessWidget {
                   child: LineChart(
                     LineChartData(
                       minY: 0,
-                      maxY: 100,
+                      maxY: maxY,
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
-                        horizontalInterval: 25,
+                        horizontalInterval: yInterval,
                         getDrawingHorizontalLine: (_) => FlLine(
                           color: Theme.of(
                             context,
@@ -379,10 +393,10 @@ class _StressGraphCard extends StatelessWidget {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 28,
-                            interval: 25,
+                            reservedSize: 42,
+                            interval: yInterval,
                             getTitlesWidget: (value, meta) => Text(
-                              value.toStringAsFixed(0),
+                              _formatAxisValue(value),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
@@ -417,5 +431,12 @@ class _StressGraphCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatAxisValue(double value) {
+    if (yAxisUnit == 'uS') {
+      return value.toStringAsFixed(0);
+    }
+    return value.toStringAsFixed(0);
   }
 }
