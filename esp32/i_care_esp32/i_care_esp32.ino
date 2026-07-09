@@ -37,14 +37,14 @@ static const float EMG_FILTER_ALPHA = 0.42f;
 static const float SENSOR_RAIL_RATIO = 0.25f;
 static const uint16_t ADC_RAIL_LOW = 8;
 static const uint16_t ADC_RAIL_HIGH = 4087;
-static const bool SERIAL_REPORT_FULL_INPUT_VECTOR = false;
-static const bool SERIAL_REPORT_FULL_MEASUREMENT_VECTOR = false;
-static const bool SERIAL_REPORT_FULL_RECONSTRUCTED_VECTOR = false;
-static const bool SERIAL_REPORT_COMPARISON_TABLE = false;
+static const bool SERIAL_REPORT_FULL_INPUT_VECTOR = true;
+static const bool SERIAL_REPORT_FULL_MEASUREMENT_VECTOR = true;
+static const bool SERIAL_REPORT_FULL_RECONSTRUCTED_VECTOR = true;
+static const bool SERIAL_REPORT_COMPARISON_TABLE = true;
 static const int SERIAL_VECTOR_PREVIEW_COUNT = 8;
 static const uint8_t SERIAL_VECTOR_DECIMALS = 2;
 static const int CS_RECON_SPARSITY = CS_N / 4;
-static const bool WIFI_DISTANCE_TEST_REPORT_ENABLED = true;
+static const bool WIFI_DISTANCE_TEST_REPORT_ENABLED = false;
 static const int WIFI_TEST_DISTANCE_M = 3;
 static const int WIFI_TEST_TRIAL_NUMBER = 3;
 // GPIO34/35 have no internal pull resistors. The external 100 kOhm pull-down
@@ -612,9 +612,9 @@ float arrayMean(const float* arr, int len) {
   return sum / (float)len;
 }
 
-#if 0
-// Disabled: laporan pengukuran measurement-rate dan WiFi-distance terlalu berat
-// untuk mode monitoring harian. Aktifkan lagi hanya saat pengujian skripsi.
+#if 1
+// Aktif untuk capture laporan measurement rate di Serial Monitor.
+// Matikan lagi setelah capture jika firmware dipakai untuk monitoring harian.
 float arrayMinValue(const float* arr, int len) {
   if (len <= 0) return 0.0f;
   float minValue = arr[0];
@@ -1099,6 +1099,11 @@ void printMeasurementRateReport(
   Serial.println(stressIndex, 2);
   Serial.println("============================================================");
 }
+
+#endif
+
+#if 0
+// Disabled: duplikat laporan WiFi distance lama.
 
 String wifiUploadStatusText(bool cloudReady, bool uploadOk) {
   if (uploadOk) return "OK";
@@ -1688,6 +1693,11 @@ void loop() {
   cs_compress_signal(cs_gsr_buffer, yGsr);
   cs_compress_signal(cs_emg_buffer, yEmg);
 
+  float xHatGsr[CS_N];
+  float xHatEmg[CS_N];
+  reconstructSignalFromMeasurements(yGsr, xHatGsr);
+  reconstructSignalFromMeasurements(yEmg, xHatEmg);
+
   const float gsrAvg = arrayMean(cs_gsr_buffer, CS_N);
   const float emgAvg = arrayMean(cs_emg_buffer, CS_N);
   const float stressIndex = sensorsAttached
@@ -1717,55 +1727,18 @@ void loop() {
     xQueueOverwrite(uploadQueue, &packet);
   }
 
-  const bool wifiOnline = WiFi.status() == WL_CONNECTED;
-  const int32_t serialRssi = wifiOnline
-      ? (latestUploadRssi > -127 ? latestUploadRssi : WiFi.RSSI())
-      : -127;
-  const float serialPacketLoss = uploadPacketLossPercent();
-
   if (!WIFI_DISTANCE_TEST_REPORT_ENABLED) {
-    Serial.print("[I-Care CS] window=");
-    Serial.print(windowId);
-    Serial.print(" gsrAvg(uS)=");
-    Serial.print(gsrAvg, 2);
-    Serial.print(" emgAvg(uV)=");
-    Serial.print(emgAvg, 2);
-    Serial.print(" attached=");
-    Serial.print(sensorsAttached ? "YES" : "NO");
-    Serial.print(" valid=");
-    Serial.print(gsrSignalValid ? "GSR" : "-");
-    Serial.print("/");
-    Serial.print(emgSignalValid ? "EMG" : "-");
-    Serial.print(" rawGsr=");
-    Serial.print(gsrRawMin);
-    Serial.print("-");
-    Serial.print(gsrRawMax);
-    Serial.print(" rawEmg=");
-    Serial.print(emgRawMin);
-    Serial.print("-");
-    Serial.print(emgRawMax);
-    Serial.print(" stressIndex=");
-    Serial.print(stressIndex, 2);
-    Serial.print(" sent=");
-    Serial.print(CS_M);
-    Serial.print("/");
-    Serial.print(CS_N);
-    Serial.print(" wifiRssi=");
-    if (wifiOnline) {
-      Serial.print(serialRssi);
-      Serial.print("dBm");
-    } else {
-      Serial.print("OFF");
-    }
-    Serial.print(" packetLoss=");
-    Serial.print(serialPacketLoss, 1);
-    Serial.print("%");
-    Serial.print(" uploadWin=");
-    Serial.print(uploadSuccessWindows);
-    Serial.print("/");
-    Serial.print(uploadAttemptWindows);
-    Serial.print(" cloud=");
-    Serial.println(wifiUploadStatusText(latestCloudReady, latestUploadOk));
+    printMeasurementRateReport(
+      yGsr,
+      yEmg,
+      xHatGsr,
+      xHatEmg,
+      gsrAvg,
+      emgAvg,
+      stressIndex,
+      latestCloudReady,
+      latestUploadOk
+    );
   }
 
   if (!gsrSignalValid && windowId % 5 == 0) {
